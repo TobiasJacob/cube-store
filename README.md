@@ -1,1 +1,1 @@
-# cube-store
+# Cube store DB
