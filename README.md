@@ -8,18 +8,19 @@ Iterate efficently and apply lambdas remotly or on larger than memory datasets i
 import cubestore as cs
 
 with cs.LocalCube("/filepath") as local_db, cs.CubeDB("128.0.0.1", "API_KEY") as remote_db:
+    db["SomeData"] = cs.zeros((5000, 2000)) # (City, Product)
     # Using pre-defined cubes
     sales_per_product = 0
-    for chunk in local_db["SomeData"].iter(axis=("City", "Product"), chunk_size=(10, None)):
+    for chunk in local_db["SomeData"].iter(chunk_size=(10, None)):
         sales_per_product = sales_per_product + chunk.sum(axis=("City"))
 
     # Preprocessing data remotly on the server with lambdas
     sales_per_product = 0
 
     def sum_sales(chunk: np.ndarray):
-        return chunk.sum(axis=("City"))
+        return np.sum(chunk, axis=("City"))
 
-    for chunk_result in remote_db["SomeData"].iter(axis=("City", "Product"), chunk_size=(10, None), lambda=sum_sales):
+    for chunk_result in remote_db["SomeData"].iter(chunk_size=(10, None), lambda=sum_sales):
         sales_per_product = sales_per_product + chunk_result
 
     # Copy data from remote cube to local cube
