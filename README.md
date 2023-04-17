@@ -2,7 +2,33 @@
 
 A python-first database for dense and sparse multidimensional data cubes.
 
-For example
+Iterate efficently and apply lambdas remotly or on larger than memory datasets in chunks.
+
+```python
+import cubestore as cs
+
+with cs.LocalCube("/filepath") as local_db, cs.CubeDB("128.0.0.1", "API_KEY") as remote_db:
+    # Using pre-defined cubes
+    sales_per_product = 0
+    for chunk in local_db["SomeData"].iter(axis=("City", "Product"), chunk_size=(10, None)):
+        sales_per_product = sales_per_product + chunk.sum(axis=("City"))
+
+    # Preprocessing data remotly on the server with lambdas
+    sales_per_product = 0
+
+    def sum_sales(chunk: np.ndarray):
+        return chunk.sum(axis=("City"))
+
+    for chunk_result in remote_db["SomeData"].iter(axis=("City", "Product"), chunk_size=(10, None), lambda=sum_sales):
+        sales_per_product = sales_per_product + chunk_result
+
+    # Copy data from remote cube to local cube
+    local_db["SomeData"] = cs.full_like(remote_db["SomeData"], 0)
+    for chunk in remote_db["SomeData"].iter(chunk_size=(..., 100)):
+        local_db["SomeData"].append(chunk)
+```
+
+If lambdas are too insecure, you can work with predefined functions as well.
 
 ```python
 import cubestore as cs
